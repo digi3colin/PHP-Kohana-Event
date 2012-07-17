@@ -23,8 +23,10 @@ class EventDispatcherTest extends Kohana_UnitTest_TestCase
 	/** @var MockEventDispatcher */
 	private $evt;
 	private $invokedCount=0;
+	private $callback;
 	private $callbackChange;
 	private $callbackUpdate;
+	private $callbackStopPropagate;
 
 	public function setUp(){
 		parent::setUp();
@@ -32,12 +34,19 @@ class EventDispatcherTest extends Kohana_UnitTest_TestCase
 		$this->invokedCount =0;
 		$this->callbackChange = array($this,'changeCallback');
 		$this->callbackUpdate = array($this,'updateCallback');
+		$this->callback = array($this,'callback');
+		$this->callbackStopPropagate = array($this,'stopPropagationCallback');
 	}
 
 	public function tearDown(){
 		parent::tearDown();
 		unset($this->evt);
 		unset($this->invokedCount);
+	}
+
+	public function callback(Event &$e){
+		$this->invokedCount++;
+		$this->assertTrue($e->target===$this->evt);
 	}
 
 	public function changeCallback(Event &$e){
@@ -50,6 +59,12 @@ class EventDispatcherTest extends Kohana_UnitTest_TestCase
 		$this->invokedCount++;
 		$this->assertEquals(MockEventDispatcher::EVENT_UPDATE, $e->type);
 		$this->assertTrue($e->target===$this->evt);
+	}
+
+	public function stopPropagationCallback(Event &$e){
+		$this->invokedCount++;
+		$this->assertTrue($e->target===$this->evt);
+		$e->stopPropagation();
 	}
 
 	public function testAddEventListener(){
@@ -155,6 +170,13 @@ class EventDispatcherTest extends Kohana_UnitTest_TestCase
 		$this->assertEquals(4,$this->invokedCount);
 	}
 
+	public function testStopPropagation(){
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,$this->callbackChange);
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,$this->callbackStopPropagate);
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,$this->callback);
+		$this->evt->change();
+		$this->assertEquals(2,$this->invokedCount);
+	}
 /*	public function testAddDuringDispatch(){
 		//This method allows the registration of event listeners on the event target. If an EventListener is added to an EventTarget while it is processing an event, it will not be triggered by the current actions but may be triggered during a later stage of event flow, such as the bubbling phase.
 	}

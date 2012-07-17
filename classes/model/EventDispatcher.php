@@ -96,6 +96,7 @@ class EventListenerList{
 			$count = count($callbacks);
 			for($i=0;$i<$count;$i++){
 				call_user_func($callbacks[$i],$event);
+				if($event->isEventStopped)break;
 			}
 		}
 		/*php not have dom like structure, it may not require the capture and bubble phase*/
@@ -126,7 +127,7 @@ class Event{
 	}
 	
 	public function stopPropagation(){
-		$isEventStopped = true;
+		$this->isEventStopped = true;
 	}
 
 	/*Many events have associated behaviors that are carried out by default. For example, if a user types a character into a text field, the default behavior is that the character is displayed in the text field. Because the TextEvent.TEXT_INPUT event's default behavior can be canceled, you can use the preventDefault() method to prevent the character from appearing.*/
@@ -179,6 +180,7 @@ class D3EventDispatcher extends EventDispatcher implements ID3EventDispatcher{
 		$count = count($callbacks);
 		for($i=0;$i<$count;$i++){
 			call_user_func($callbacks[$i],$event);
+			if($event->isEventStopped)break;
 		}
 		unset($this->once_callbacks[$event->type]);
 	}
