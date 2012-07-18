@@ -189,6 +189,45 @@ class EventDispatcherTest extends PHPUnit_Framework_TestCase
 		$this->evt->change();
 		$this->assertEquals(2,$this->invokedCount);
 	}
+
+	private $priorityRunning=0;
+	public function _testPriorityCallback1(Event $e){
+		$this->assertEquals(0,$this->priorityRunning);
+		$this->priorityRunning=1;
+	}
+
+	public function _testPriorityCallback2(Event $e){
+		$this->assertEquals(1,$this->priorityRunning);
+		$this->priorityRunning=2;
+	}
+
+	public function _testPriorityCallback3(Event $e){
+		$this->assertEquals(2,$this->priorityRunning);
+		$this->priorityRunning=3;
+	}
+
+	public function testDefaultPriority(){
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback1'));
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback2'));
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback3'));
+		$this->evt->change();
+	}
+
+	public function testUserPriority(){
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback2'),false,2);
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback3'),false,1);
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback1'),false,3);
+		$this->evt->change();
+	}
+
+	public function testUserPriorityWithSamePriority(){
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback3'),false);
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback1'),false,2);
+		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,array($this,'_testPriorityCallback2'),false,2);
+		$this->evt->change();
+	}
+
+
 /*	public function testAddDuringDispatch(){
 		//This method allows the registration of event listeners on the event target. If an EventListener is added to an EventTarget while it is processing an event, it will not be triggered by the current actions but may be triggered during a later stage of event flow, such as the bubbling phase.
 	}

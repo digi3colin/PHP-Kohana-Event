@@ -51,14 +51,16 @@ class EventListenerList{
 
 		//prevent add twice of same event name and handler;
 		if($this->isAdded($dispatcherId,$eventName,$callback,$useCapture))return;
-		$this->queue[$dispatcherId][$eventName][] = $callback;
+
+		$this->queue[$dispatcherId][$eventName][] = array('callback'=>$callback,'priority'=>$priority);
 	}
 
 	private function isAdded($dispatcherId, $eventName, &$callback, $useCapture = false){
 		$callbacks = &$this->queue[$dispatcherId][$eventName];
 		$count = count($callbacks);
 		for($i=0;$i<$count;$i++){
-			if($callbacks[$i][0]===$callback[0] && $callbacks[$i][1]==$callback[1])return true;
+			//if callback[0], object is same on the list and callback[2], method ,is same on the list, it's added
+			if($callbacks[$i]['callback'][0]===$callback[0] && $callbacks[$i]['callback'][1]==$callback[1])return true;
 		}
 		return false;
 	}
@@ -70,7 +72,7 @@ class EventListenerList{
 		$callbacks = &$this->queue[$dispatcherId][$eventName];
 		$count = count($callbacks);
 		for($i=0;$i<$count;$i++){
-			if($callbacks[$i][0] === $callback[0] && $callbacks[$i][1]==$callback[1]){
+			if($callbacks[$i]['callback'][0] === $callback[0] && $callbacks[$i]['callback'][1]==$callback[1]){
 				array_splice($callbacks,$i,1);
 				return;
 			}
@@ -88,12 +90,21 @@ class EventListenerList{
 			//copy the array because cannot guarantee the callbacks change by removeEventListener
 			$callbacks = $this->queue[$dispatcherId][$eventName];
 			$count = count($callbacks);
+			//sort by priority;
+
+			usort($callbacks, array($this,'comparePriorityDesc'));
+
 			for($i=0;$i<$count;$i++){
-				call_user_func($callbacks[$i],$event);
+				call_user_func($callbacks[$i]['callback'],$event);
 				if($event->isEventStopped)break;
 			}
 		}
 		/*php not have dom like structure, it may not require the capture and bubble phase*/
 		//if($event->bubbles == true){$event->currentTarget=xxx;}
+	}
+
+	private function comparePriorityDesc($a, $b)
+	{
+		return ($a['priority'] <= $b['priority']) ? 1 : -1;
 	}
 }
