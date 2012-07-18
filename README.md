@@ -23,3 +23,21 @@ function onProgress($e){
 function onLoad($e){
 	print($e->type);
 }
+
+classes/ieventdispatcher.php
+IEventDispatcher is interface of eventDispatcher.
+
+classes/eventdispatcher.php
+the EventDispatcher follow W3C event model.
+
+classes/id3eventdispatcher.php
+ID3EventDispatcher add once and when method
+
+classes/d3eventdispatcher.php
+D3EventDispatcher is base classes of event dispatcher with once and when method.
+
+classes/event.php
+Event is the w3c event object.
+
+classes/errorevent.php
+ErrorEvent is the event object with text and id for error report
