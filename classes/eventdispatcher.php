@@ -1,12 +1,6 @@
 <?php 
 //http://www.w3.org/TR/DOM-Level-2-Events/events.html
 
-interface IEventDispatcher{
-	public function addEventListener($type, $callback, $useCapture = false, $priority = 0);
-	public function dispatchEvent(Event &$event);
-	public function removeEventListener($type, $callback, $useCapture = false);
-}
-
 class EventDispatcher implements IEventDispatcher{
 	private static $__id=0;
 	/** @var int */
@@ -35,7 +29,7 @@ class EventDispatcher implements IEventDispatcher{
 		return $event->allowDefaultBehaviour;
 	}
 }
-
+//internal class for event dispatcher
 class EventListenerList{
 	/** @var EventListenerList */
 	private static $ins;
@@ -101,87 +95,5 @@ class EventListenerList{
 		}
 		/*php not have dom like structure, it may not require the capture and bubble phase*/
 		//if($event->bubbles == true){$event->currentTarget=xxx;}
-	}
-}
-
-class Event{
-	const CAPTURING_PHASE	= 1;
-	const AT_TARGET			= 2;
-	const BUBBLING_PHASE	= 3;
-
-	public $type;//read only.
-	public $target;//read only
-	public $currentTarget;//read only
-	public $eventPhase;//read only
-	public $bubbles;//read only
-	public $cancelable;//read only
-//	public $timeStamp;//read only
-
-	public $isEventStopped = false;
-	public $allowDefaultBehaviour = true;
-
-	public function __construct($eventTypeArg,$canBubbleArg=false, $cancelableArg=false) {
-		$this->type       = $eventTypeArg;
-		$this->bubbles    = $canBubbleArg;
-		$this->cancelable = $cancelableArg;
-	}
-	
-	public function stopPropagation(){
-		$this->isEventStopped = true;
-	}
-
-	/*Many events have associated behaviors that are carried out by default. For example, if a user types a character into a text field, the default behavior is that the character is displayed in the text field. Because the TextEvent.TEXT_INPUT event's default behavior can be canceled, you can use the preventDefault() method to prevent the character from appearing.*/
-	public function preventDefault(){
-		if($this->cancelable == false)return;
-		$this->allowDefaultBehaviour = false;
-	}
-}
-
-interface ID3EventDispatcher extends IEventDispatcher{
-	public function when($eventType,$callback);
-	public function once($eventType,$callback);
-}
-
-class D3EventDispatcher extends EventDispatcher implements ID3EventDispatcher{
-	private $once_callbacks;
-	private $once_callback;
-
-	public function __construct(){
-		parent::__construct();
-
-		$this->once_callbacks=array();
-		$this->once_callback=array(&$this,'run_once');
-	}
-
-	public function when($eventType,$callback){
-		$this->addEventListener($eventType,$callback,false,0);
-		return $this;
-	}
-
-	public function once($eventType,$callback){
-		//if event dispatched, it will remove after dispatched.
-		if(empty($this->once_callbacks[$eventType])){
-			$this->once_callbacks[$eventType] = array();//this array<function> cannot release until gc;
-
-			$this->addEventListener($eventType, $this->once_callback, false, 0);
-		}
-
-		$this->once_callbacks[$eventType][]=$callback;
-
-		return $this;
-	}
-
-	public function run_once(Event &$event){
-		$this->removeEventListener($event->type, $this->once_callback);
-		//the callback may call once() again
-		//then the dict[e.type] will increase;
-		//prevent this by clone the array;
-		$callbacks = &$this->once_callbacks[$event->type];
-		$count = count($callbacks);
-		for($i=0;$i<$count;$i++){
-			call_user_func($callbacks[$i],$event);
-			if($event->isEventStopped)break;
-		}
-		unset($this->once_callbacks[$event->type]);
 	}
 }

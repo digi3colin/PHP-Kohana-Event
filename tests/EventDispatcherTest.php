@@ -1,6 +1,10 @@
-<?php defined('SYSPATH') or die('No direct access allowed!');
+<?php
 
-require_once(MODPATH.'event/classes/model/EventDispatcher.php');
+function my_autoloader($class) {
+	include '../classes/'.strtolower($class).'.php';
+}
+
+spl_autoload_register('my_autoloader');
 
 class MockEventDispatcher extends D3EventDispatcher{
 	const EVENT_CHANGE = "EVENT_CHANGE";
@@ -18,7 +22,7 @@ class MockEventDispatcher extends D3EventDispatcher{
 	}
 }
 
-class EventDispatcherTest extends Kohana_UnitTest_TestCase
+class EventDispatcherTest extends PHPUnit_Framework_TestCase
 {
 	/** @var MockEventDispatcher */
 	private $evt;
@@ -174,6 +178,14 @@ class EventDispatcherTest extends Kohana_UnitTest_TestCase
 		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,$this->callbackChange);
 		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,$this->callbackStopPropagate);
 		$this->evt->addEventListener(MockEventDispatcher::EVENT_CHANGE,$this->callback);
+		$this->evt->change();
+		$this->assertEquals(2,$this->invokedCount);
+	}
+
+	public function testStopPropagationWithOnce(){
+		$this->evt->once(MockEventDispatcher::EVENT_CHANGE,$this->callbackChange);
+		$this->evt->once(MockEventDispatcher::EVENT_CHANGE,$this->callbackStopPropagate);
+		$this->evt->once(MockEventDispatcher::EVENT_CHANGE,$this->callback);
 		$this->evt->change();
 		$this->assertEquals(2,$this->invokedCount);
 	}
